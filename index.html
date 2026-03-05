@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Sistema Residencias</title>
+<style>
+body{
+font-family:'Segoe UI';
+background:linear-gradient(135deg,#4e73df,#1cc88a);
+margin:0;
+padding:30px;
+}
+.container{
+background:white;
+padding:25px;
+border-radius:15px;
+box-shadow:0px 10px 25px rgba(0,0,0,0.2);
+max-width:1300px;
+margin:auto;
+}
+h2{text-align:center;}
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:10px;
+margin-bottom:15px;
+}
+input{
+padding:8px;
+border-radius:8px;
+border:1px solid #ccc;
+}
+button{
+padding:8px 12px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+}
+.btn-primary{background:#4e73df;color:white;}
+.btn-danger{background:#e74a3b;color:white;}
+.btn-warning{background:#f6c23e;color:black;}
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+font-size:13px;
+}
+th{
+background:#4e73df;
+color:white;
+padding:6px;
+}
+td{
+padding:6px;
+border-bottom:1px solid #ddd;
+text-align:center;
+}
+tr:hover{background:#f2f2f2;}
+.search{
+margin-bottom:10px;
+text-align:right;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h2>Sistema de Residencias</h2>
+
+<div class="grid">
+<input id="proyecto" placeholder="Proyecto">
+<input id="matricula" placeholder="Matricula">
+<input id="nombre_alumno" placeholder="Nombre alumno">
+<input id="apellido_alumno" placeholder="Apellido alumno">
+<input id="nombre_ase_int" placeholder="Nombre asesor interno">
+<input id="apellido_ase_int" placeholder="Apellido asesor interno">
+<input id="nombre_ase_ext" placeholder="Nombre asesor externo">
+<input id="apellido_ase_ext" placeholder="Apellido asesor externo">
+<input id="nombre_empresa" placeholder="Empresa">
+<input id="nombre_periodo" placeholder="Periodo">
+<input id="fecha_inicio" type="date">
+<input id="fecha_fin" type="date">
+</div>
+
+<button class="btn-primary" onclick="registrar()">Guardar</button>
+
+<div class="search">
+<input id="buscar" placeholder="Buscar..." onkeyup="filtrar()">
+</div>
+
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Matricula</th>
+<th>Alumno</th>
+<th>Proyecto</th>
+<th>Empresa</th>
+<th>Periodo</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="tabla"></tbody>
+</table>
+
+</div>
+
+<script>
+const API="http://127.0.0.1:5000";
+let datosGlobal=[];
+let editandoId=null;
+
+function cargar(){
+fetch(API+"/proyectos")
+.then(r=>r.json())
+.then(data=>{
+datosGlobal=data;
+mostrar(data);
+});
+}
+
+function mostrar(data){
+let tabla=document.getElementById("tabla");
+tabla.innerHTML="";
+data.forEach(p=>{
+tabla.innerHTML+=`
+<tr>
+<td>${p.id}</td>
+<td>${p.matricula}</td>
+<td>${p.alumno}</td>
+<td>${p.proyecto}</td>
+<td>${p.empresa}</td>
+<td>${p.periodo}</td>
+<td>
+<button class="btn-warning" onclick="cargarEdicion(${p.id})">Editar</button>
+<button class="btn-danger" onclick="eliminar(${p.id})">Eliminar</button>
+</td>
+</tr>
+`;
+});
+}
+
+function registrar(){
+let datos={
+proyecto:proyecto.value,
+matricula:matricula.value,
+nombre_alumno:nombre_alumno.value,
+apellido_alumno:apellido_alumno.value,
+nombre_ase_int:nombre_ase_int.value,
+apellido_ase_int:apellido_ase_int.value,
+nombre_ase_ext:nombre_ase_ext.value,
+apellido_ase_ext:apellido_ase_ext.value,
+nombre_empresa:nombre_empresa.value,
+nombre_periodo:nombre_periodo.value,
+fecha_inicio:fecha_inicio.value,
+fecha_fin:fecha_fin.value
+};
+
+if(editandoId){
+fetch(API+"/editar/"+editandoId,{
+method:"PUT",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(datos)
+}).then(()=>{
+editandoId=null;
+cargar();
+});
+}else{
+fetch(API+"/registrar",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(datos)
+}).then(()=>cargar());
+}
+}
+
+function eliminar(id){
+if(confirm("¿Eliminar registro?")){
+fetch(API+"/eliminar/"+id,{method:"DELETE"})
+.then(()=>cargar());
+}
+}
+
+function cargarEdicion(id){
+let p=datosGlobal.find(x=>x.id==id);
+editandoId=id;
+
+proyecto.value=p.proyecto;
+matricula.value=p.matricula;
+let nombres=p.alumno.split(" ");
+nombre_alumno.value=nombres[0];
+apellido_alumno.value=nombres[1]||"";
+nombre_empresa.value=p.empresa;
+nombre_periodo.value=p.periodo;
+}
+
+function filtrar(){
+let texto=buscar.value.toLowerCase();
+let filtrado=datosGlobal.filter(p=>
+p.proyecto.toLowerCase().includes(texto)||
+p.empresa.toLowerCase().includes(texto)||
+p.matricula.toLowerCase().includes(texto)
+);
+mostrar(filtrado);
+}
+
+cargar();
+</script>
+
+</body>
+</html>
