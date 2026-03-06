@@ -77,7 +77,7 @@ def eliminar(id):
         conexion = get_db_connection()
         cursor = conexion.cursor()
 
-        # Primero obtenemos los IDs relacionados para poder eliminarlos después
+        # Primero obtenemos los IDs relacionados
         cursor.execute("""
             SELECT id_alumno, id_asesor_interno, id_asesor_externo, id_empresa, id_periodo 
             FROM proyecto WHERE id_proyecto = %s
@@ -91,28 +91,23 @@ def eliminar(id):
             # Eliminar el proyecto
             cursor.execute("DELETE FROM proyecto WHERE id_proyecto = %s", (id,))
 
-            # Opcional: Eliminar registros huérfanos si lo deseas
-            # Verificar si el alumno tiene otros proyectos
+            # Opcional: Eliminar registros huérfanos
             cursor.execute("SELECT COUNT(*) FROM proyecto WHERE id_alumno = %s", (id_alumno,))
             if cursor.fetchone()[0] == 0:
                 cursor.execute("DELETE FROM alumnos WHERE id_alumno = %s", (id_alumno,))
 
-            # Verificar asesor interno
             cursor.execute("SELECT COUNT(*) FROM proyecto WHERE id_asesor_interno = %s", (id_asi_int,))
             if cursor.fetchone()[0] == 0:
                 cursor.execute("DELETE FROM asesores WHERE id_asesor = %s", (id_asi_int,))
 
-            # Verificar asesor externo
             cursor.execute("SELECT COUNT(*) FROM proyecto WHERE id_asesor_externo = %s", (id_asi_ext,))
             if cursor.fetchone()[0] == 0:
                 cursor.execute("DELETE FROM asesores WHERE id_asesor = %s", (id_asi_ext,))
 
-            # Verificar empresa
             cursor.execute("SELECT COUNT(*) FROM proyecto WHERE id_empresa = %s", (id_empresa,))
             if cursor.fetchone()[0] == 0:
                 cursor.execute("DELETE FROM empresa WHERE id_empresa = %s", (id_empresa,))
 
-            # Verificar periodo
             cursor.execute("SELECT COUNT(*) FROM proyecto WHERE id_periodo = %s", (id_periodo,))
             if cursor.fetchone()[0] == 0:
                 cursor.execute("DELETE FROM periodo WHERE id_periodo = %s", (id_periodo,))
