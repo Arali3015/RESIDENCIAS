@@ -169,6 +169,26 @@ def test():
         }), 500
 
 
+@app.route("/diagnostico", methods=["GET"])
+def diagnostico():
+    info = {
+        "status": "OK",
+        "endpoints_registrados": [],
+        "variables_entorno": {
+            "PORT": os.environ.get("PORT", "No definido")
+        }
+    }
+
+    # Listar todas las rutas registradas
+    for rule in app.url_map.iter_rules():
+        info["endpoints_registrados"].append({
+            "endpoint": rule.endpoint,
+            "url": str(rule),
+            "methods": list(rule.methods)
+        })
+
+    return jsonify(info)
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
