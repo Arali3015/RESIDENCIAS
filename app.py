@@ -71,74 +71,40 @@ def registrar():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/eliminar/<int:id>", methods=["DELETE"])
+@app.route("/eliminar/<int:id>", methods=["DELETE", "OPTIONS"])
 def eliminar(id):
+    # Manejar preflight CORS
+    if request.method == "OPTIONS":
+        response = jsonify({"mensaje": "OK"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "DELETE, OPTIONS")
+        return response
+
     try:
         conexion = get_db_connection()
-        cursor = conexion.cursor(dictionary=True)
+        cursor = conexion.cursor()
 
-        # Primero obtenemos los IDs relacionados
-        cursor.execute("""
-            SELECT id_alumno, id_asesor_interno, id_asesor_externo, id_empresa, id_periodo 
-            FROM proyecto WHERE id_proyecto = %s
-        """, (id,))
+        # Versión simple: solo eliminar el proyecto
+        cursor.execute("DELETE FROM proyecto WHERE id_proyecto = %s", (id,))
+        conexion.commit()
 
-        resultado = cursor.fetchone()
-        print(f"Resultado de búsqueda para ID {id}:", resultado)  # Debug
-
-        if resultado:
-            id_alumno = resultado['id_alumno']
-            id_asi_int = resultado['id_asesor_interno']
-            id_asi_ext = resultado['id_asesor_externo']
-            id_empresa = resultado['id_empresa']
-            id_periodo = resultado['id_periodo']
-
-            # Eliminar el proyecto
-            cursor.execute("DELETE FROM proyecto WHERE id_proyecto = %s", (id,))
-            print(f"Proyecto {id} eliminado")  # Debug
-
-            # Verificar y eliminar registros huérfanos
-            cursor.execute("SELECT COUNT(*) as count FROM proyecto WHERE id_alumno = %s", (id_alumno,))
-            if cursor.fetchone()['count'] == 0:
-                cursor.execute("DELETE FROM alumnos WHERE id_alumno = %s", (id_alumno,))
-                print(f"Alumno {id_alumno} eliminado")  # Debug
-
-            cursor.execute("SELECT COUNT(*) as count FROM proyecto WHERE id_asesor_interno = %s", (id_asi_int,))
-            if cursor.fetchone()['count'] == 0:
-                cursor.execute("DELETE FROM asesores WHERE id_asesor = %s", (id_asi_int,))
-                print(f"Asesor interno {id_asi_int} eliminado")  # Debug
-
-            cursor.execute("SELECT COUNT(*) as count FROM proyecto WHERE id_asesor_externo = %s", (id_asi_ext,))
-            if cursor.fetchone()['count'] == 0:
-                cursor.execute("DELETE FROM asesores WHERE id_asesor = %s", (id_asi_ext,))
-                print(f"Asesor externo {id_asi_ext} eliminado")  # Debug
-
-            cursor.execute("SELECT COUNT(*) as count FROM proyecto WHERE id_empresa = %s", (id_empresa,))
-            if cursor.fetchone()['count'] == 0:
-                cursor.execute("DELETE FROM empresa WHERE id_empresa = %s", (id_empresa,))
-                print(f"Empresa {id_empresa} eliminada")  # Debug
-
-            cursor.execute("SELECT COUNT(*) as count FROM proyecto WHERE id_periodo = %s", (id_periodo,))
-            if cursor.fetchone()['count'] == 0:
-                cursor.execute("DELETE FROM periodo WHERE id_periodo = %s", (id_periodo,))
-                print(f"Periodo {id_periodo} eliminado")  # Debug
-
-            conexion.commit()
-            print("Transacción completada exitosamente")  # Debug
-        else:
-            print(f"No se encontró proyecto con ID {id}")  # Debug
-            return jsonify({"error": "Proyecto no encontrado"}), 404
-
+        filas_afectadas = cursor.rowcount
         cursor.close()
         conexion.close()
 
-        return jsonify({"mensaje": "Eliminado correctamente"})
+        response = jsonify({
+            "mensaje": "Eliminado correctamente",
+            "filas_afectadas": filas_afectadas
+        })
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response
 
     except Exception as e:
         print("Error en /eliminar:", str(e))
-        import traceback
-        traceback.print_exc()  # Esto imprimirá el error completo
-        return jsonify({"error": str(e)}), 500
+        response = jsonify({"error": str(e)}), 500
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response
 
 @app.route("/editar/<int:id>", methods=["PUT"])
 def editar(id):
