@@ -75,7 +75,7 @@ def registrar():
 def eliminar(id):
     try:
         conexion = get_db_connection()
-        cursor = conexion.cursor()
+        cursor = conexion.cursor(dictionary=True)
 
         # Primero obtenemos los IDs relacionados
         cursor.execute("""
@@ -84,35 +84,51 @@ def eliminar(id):
         """, (id,))
 
         resultado = cursor.fetchone()
+        print(f"Resultado de búsqueda para ID {id}:", resultado)  # Debug
 
         if resultado:
-            id_alumno, id_asi_int, id_asi_ext, id_empresa, id_periodo = resultado
+            id_alumno = resultado['id_alumno']
+            id_asi_int = resultado['id_asesor_interno']
+            id_asi_ext = resultado['id_asesor_externo']
+            id_empresa = resultado['id_empresa']
+            id_periodo = resultado['id_periodo']
 
             # Eliminar el proyecto
             cursor.execute("DELETE FROM proyecto WHERE id_proyecto = %s", (id,))
+            print(f"Proyecto {id} eliminado")  # Debug
 
-            # Opcional: Eliminar registros huérfanos
-            cursor.execute("SELECT COUNT(*) FROM proyecto WHERE id_alumno = %s", (id_alumno,))
-            if cursor.fetchone()[0] == 0:
+            # Verificar y eliminar registros huérfanos
+            cursor.execute("SELECT COUNT(*) as count FROM proyecto WHERE id_alumno = %s", (id_alumno,))
+            if cursor.fetchone()['count'] == 0:
                 cursor.execute("DELETE FROM alumnos WHERE id_alumno = %s", (id_alumno,))
+                print(f"Alumno {id_alumno} eliminado")  # Debug
 
-            cursor.execute("SELECT COUNT(*) FROM proyecto WHERE id_asesor_interno = %s", (id_asi_int,))
-            if cursor.fetchone()[0] == 0:
+            cursor.execute("SELECT COUNT(*) as count FROM proyecto WHERE id_asesor_interno = %s", (id_asi_int,))
+            if cursor.fetchone()['count'] == 0:
                 cursor.execute("DELETE FROM asesores WHERE id_asesor = %s", (id_asi_int,))
+                print(f"Asesor interno {id_asi_int} eliminado")  # Debug
 
-            cursor.execute("SELECT COUNT(*) FROM proyecto WHERE id_asesor_externo = %s", (id_asi_ext,))
-            if cursor.fetchone()[0] == 0:
+            cursor.execute("SELECT COUNT(*) as count FROM proyecto WHERE id_asesor_externo = %s", (id_asi_ext,))
+            if cursor.fetchone()['count'] == 0:
                 cursor.execute("DELETE FROM asesores WHERE id_asesor = %s", (id_asi_ext,))
+                print(f"Asesor externo {id_asi_ext} eliminado")  # Debug
 
-            cursor.execute("SELECT COUNT(*) FROM proyecto WHERE id_empresa = %s", (id_empresa,))
-            if cursor.fetchone()[0] == 0:
+            cursor.execute("SELECT COUNT(*) as count FROM proyecto WHERE id_empresa = %s", (id_empresa,))
+            if cursor.fetchone()['count'] == 0:
                 cursor.execute("DELETE FROM empresa WHERE id_empresa = %s", (id_empresa,))
+                print(f"Empresa {id_empresa} eliminada")  # Debug
 
-            cursor.execute("SELECT COUNT(*) FROM proyecto WHERE id_periodo = %s", (id_periodo,))
-            if cursor.fetchone()[0] == 0:
+            cursor.execute("SELECT COUNT(*) as count FROM proyecto WHERE id_periodo = %s", (id_periodo,))
+            if cursor.fetchone()['count'] == 0:
                 cursor.execute("DELETE FROM periodo WHERE id_periodo = %s", (id_periodo,))
+                print(f"Periodo {id_periodo} eliminado")  # Debug
 
-        conexion.commit()
+            conexion.commit()
+            print("Transacción completada exitosamente")  # Debug
+        else:
+            print(f"No se encontró proyecto con ID {id}")  # Debug
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+
         cursor.close()
         conexion.close()
 
@@ -120,8 +136,9 @@ def eliminar(id):
 
     except Exception as e:
         print("Error en /eliminar:", str(e))
+        import traceback
+        traceback.print_exc()  # Esto imprimirá el error completo
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/editar/<int:id>", methods=["PUT"])
 def editar(id):
