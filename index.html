@@ -68,7 +68,7 @@ text-align:right;
 <h2>Sistema de Residencias</h2>
 
 <div class="grid">
-<input id="proyecto" placeholder="Proyecto">
+<input id="titulo" placeholder="Titulo">
 <input id="matricula" placeholder="Matricula">
 <input id="nombre_alumno" placeholder="Nombre alumno">
 <input id="apellido_alumno" placeholder="Apellido alumno">
@@ -94,7 +94,7 @@ text-align:right;
 <th>ID</th>
 <th>Matricula</th>
 <th>Alumno</th>
-<th>Proyecto</th>
+<th>Titulo</th>
 <th>Empresa</th>
 <th>Periodo</th>
 <th>Acciones</th>
@@ -106,7 +106,7 @@ text-align:right;
 </div>
 
 <script>
-const API="https://web-production-e1c80.up.railway.app";
+const API="http://127.0.0.1:5000";
 let datosGlobal=[];
 let editandoId=null;
 
@@ -142,7 +142,7 @@ tabla.innerHTML+=`
 
 function registrar(){
 let datos={
-proyecto:proyecto.value,
+titulo:titulo.value,
 matricula:matricula.value,
 nombre_alumno:nombre_alumno.value,
 apellido_alumno:apellido_alumno.value,
@@ -185,7 +185,7 @@ function cargarEdicion(id){
 let p=datosGlobal.find(x=>x.id==id);
 editandoId=id;
 
-proyecto.value=p.proyecto;
+titulo.value=p.proyecto;
 matricula.value=p.matricula;
 let nombres=p.alumno.split(" ");
 nombre_alumno.value=nombres[0];
