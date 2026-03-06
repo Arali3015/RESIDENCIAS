@@ -73,35 +73,33 @@ def registrar():
 
 @app.route("/eliminar/<int:id>", methods=["DELETE", "OPTIONS"])
 def eliminar(id):
-    # Manejar preflight CORS
+    # Manejar peticiones OPTIONS (para CORS)
     if request.method == "OPTIONS":
-        response = jsonify({"mensaje": "OK"})
+        response = jsonify({"ok": True})
         response.headers.add("Access-Control-Allow-Origin", "*")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type")
         response.headers.add("Access-Control-Allow-Methods", "DELETE, OPTIONS")
         return response
 
     try:
+        print(f"Intentando eliminar ID: {id}")
+
         conexion = get_db_connection()
         cursor = conexion.cursor()
 
-        # Versión simple: solo eliminar el proyecto
+        # Eliminar el proyecto
         cursor.execute("DELETE FROM proyecto WHERE id_proyecto = %s", (id,))
         conexion.commit()
 
-        filas_afectadas = cursor.rowcount
         cursor.close()
         conexion.close()
 
-        response = jsonify({
-            "mensaje": "Eliminado correctamente",
-            "filas_afectadas": filas_afectadas
-        })
+        response = jsonify({"mensaje": "Eliminado correctamente"})
         response.headers.add("Access-Control-Allow-Origin", "*")
         return response
 
     except Exception as e:
-        print("Error en /eliminar:", str(e))
+        print(f"Error: {str(e)}")
         response = jsonify({"error": str(e)}), 500
         response.headers.add("Access-Control-Allow-Origin", "*")
         return response
